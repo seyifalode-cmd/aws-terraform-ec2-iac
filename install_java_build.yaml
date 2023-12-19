@@ -1,0 +1,72 @@
+
+- name: Java Build VM
+  hosts: localhost
+  remote_user: ec2-user
+  become: true
+
+  tasks:
+
+    - name: install dependencies
+      yum:
+        name: "{{ package }} "
+        state: present
+      vars:
+        package:
+        - git
+        - tree
+    - block:    
+      - name: Install Docker
+        package:
+          name: "docker-20.10.4-1.amzn2.x86_64"
+          state: present
+
+      - name: Ensure group "docker" exists
+        ansible.builtin.group:
+          name: docker
+          state: present
+
+      - name: Add ec2-user user to docker group
+        ansible.builtin.user:
+          name: ec2-user
+          group: docker
+          append: yes
+
+      - name: Start Docker service
+        service:
+          name: docker
+          state: started
+          enabled: true
+
+      - name: Change permissions of docker.sock
+        file:
+          path: "/var/run/docker.sock"
+          state: file
+          mode: "777"
+
+    - block:
+      - name: Download and Unarchive maven
+        unarchive:
+          src: http://www.apache.org/dist/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.tar.gz
+          dest: /opt
+          copy: no
+
+      - name: Create maven symlink to /usr/bin
+        file:
+          src: /opt/apache-maven-3.3.9/bin/mvn
+          dest: /usr/bin/mvn
+          state: link
+
+      - name: Configure maven and its environment variables
+        lineinfile:
+          dest: "/etc/profile.d/maven.sh"
+          line: "{{ item.line }}"
+          create: yes
+          state: present
+        with_items:
+          - { line: 'M2_HOME=/opt/apache-maven-3.3.9' }
+          - { line: 'PATH=$PATH:$M2_HOME/bin' }
+
+      - name: Exports/Run maven env file for make M2_HOME available globally
+        shell: "source /etc/profile.d/maven.sh"
+
+
