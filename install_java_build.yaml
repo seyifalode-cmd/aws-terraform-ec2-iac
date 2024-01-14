@@ -1,4 +1,3 @@
-
 - name: Java Build VM
   hosts: localhost
   remote_user: ec2-user
@@ -17,7 +16,7 @@
     - block:    
       - name: Install Docker
         package:
-          name: "docker-20.10.4-1.amzn2.x86_64"
+          name: "docker-20.10.25-1.amzn2.0.3.x86_64"
           state: present
 
       - name: Ensure group "docker" exists
@@ -46,13 +45,13 @@
     - block:
       - name: Download and Unarchive maven
         unarchive:
-          src: http://www.apache.org/dist/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.tar.gz
+          src:  https://downloads.apache.org/maven/maven-3/3.9.5/binaries/apache-maven-3.9.5-bin.tar.gz
           dest: /opt
           copy: no
 
       - name: Create maven symlink to /usr/bin
         file:
-          src: /opt/apache-maven-3.3.9/bin/mvn
+          src: /opt/apache-maven-3.9.5/bin/mvn
           dest: /usr/bin/mvn
           state: link
 
@@ -63,10 +62,9 @@
           create: yes
           state: present
         with_items:
-          - { line: 'M2_HOME=/opt/apache-maven-3.3.9' }
+          - { line: 'M2_HOME=/opt/apache-maven-3.9.5' }
           - { line: 'PATH=$PATH:$M2_HOME/bin' }
 
       - name: Exports/Run maven env file for make M2_HOME available globally
         shell: "source /etc/profile.d/maven.sh"
-
 
