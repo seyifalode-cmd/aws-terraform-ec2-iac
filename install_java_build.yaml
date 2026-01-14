@@ -4,67 +4,66 @@
   become: true
 
   tasks:
-
-    - name: install dependencies
-      yum:
-        name: "{{ package }} "
+    - name: Install dependencies
+      ansible.builtin.yum:
+        name: "{{ package }}"
         state: present
       vars:
         package:
-        - git
-        - tree
-    - block:    
-      - name: Install Docker
-        package:
-          name: "docker-20.10.25-1.amzn2.0.3.x86_64"
-          state: present
+          - git
+          - tree
 
-      - name: Ensure group "docker" exists
-        ansible.builtin.group:
-          name: docker
-          state: present
+    - name: Install and configure Docker
+      block:
+        - name: Install Docker
+          ansible.builtin.package:
+            name: docker
+            state: latest
 
-      - name: Add ec2-user user to docker group
-        ansible.builtin.user:
-          name: ec2-user
-          group: docker
-          append: yes
+        - name: Ensure group "docker" exists
+          ansible.builtin.group:
+            name: docker
+            state: present
 
-      - name: Start Docker service
-        service:
-          name: docker
-          state: started
-          enabled: true
+        - name: Add ec2-user user to docker group
+          ansible.builtin.user:
+            name: ec2-user
+            group: docker
+            append: true
 
-      - name: Change permissions of docker.sock
-        file:
-          path: "/var/run/docker.sock"
-          state: file
-          mode: "777"
+        - name: Start Docker service
+          ansible.builtin.service:
+            name: docker
+            state: started
+            enabled: true
 
-    - block:
-      - name: Download and Unarchive maven
-        unarchive:
-          src:  https://downloads.apache.org/maven/maven-3/3.9.5/binaries/apache-maven-3.9.5-bin.tar.gz
-          dest: /opt
-          copy: no
+        - name: Change permissions of docker.sock
+          ansible.builtin.file:
+            path: "/var/run/docker.sock"
+            state: file
+            mode: "0777"
 
-      - name: Create maven symlink to /usr/bin
-        file:
-          src: /opt/apache-maven-3.9.5/bin/mvn
-          dest: /usr/bin/mvn
-          state: link
+    - name: Install and configure Maven
+      block:
+        - name: Download and Unarchive maven
+          ansible.builtin.unarchive:
+            src: https://downloads.apache.org/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.tar.gz
+            dest: /opt
+            remote_src: true
 
-      - name: Configure maven and its environment variables
-        lineinfile:
-          dest: "/etc/profile.d/maven.sh"
-          line: "{{ item.line }}"
-          create: yes
-          state: present
-        with_items:
-          - { line: 'M2_HOME=/opt/apache-maven-3.9.5' }
-          - { line: 'PATH=$PATH:$M2_HOME/bin' }
+        - name: Create maven symlink to /usr/bin
+          ansible.builtin.file:
+            src: /opt/apache-maven-3.9.9/bin/mvn
+            dest: /usr/bin/mvn
+            state: link
 
-      - name: Exports/Run maven env file for make M2_HOME available globally
-        shell: "source /etc/profile.d/maven.sh"
-
+        - name: Configure maven and its environment variables
+          ansible.builtin.lineinfile:
+            dest: "/etc/profile.d/maven.sh"
+            line: "{{ item.line }}"
+            create: true
+            state: present
+            mode: "0644"
+          with_items:
+            - { line: 'M2_HOME=/opt/apache-maven-3.9.9' }
+            - { line: 'PATH=$PATH:$M2_HOME/bin' }
