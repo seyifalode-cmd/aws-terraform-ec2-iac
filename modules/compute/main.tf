@@ -22,7 +22,7 @@ resource "aws_key_pair" "aws-key" {
 #Create and bootstrap Java EC2 build server
 #===========================================
 resource "aws_instance" "java_build" {
-  instance_type               = "t2.micro"
+  instance_type               = "t3.micro"
   ami                         = data.aws_ssm_parameter.webserver-ami.value
   tags = {
   Name = "java_build"
