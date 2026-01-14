@@ -47,13 +47,13 @@
       block:
         - name: Download and Unarchive maven
           ansible.builtin.unarchive:
-            src: https://downloads.apache.org/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.tar.gz
+            src: https://downloads.apache.org/maven/maven-3/3.9.12/binaries/apache-maven-3.9.12-bin.tar.gz
             dest: /opt
             remote_src: true
 
         - name: Create maven symlink to /usr/bin
           ansible.builtin.file:
-            src: /opt/apache-maven-3.9.9/bin/mvn
+            src: /opt/apache-maven-3.9.12/bin/mvn
             dest: /usr/bin/mvn
             state: link
 
@@ -65,5 +65,5 @@
             state: present
             mode: "0644"
           with_items:
-            - { line: 'M2_HOME=/opt/apache-maven-3.9.9' }
-            - { line: 'PATH=$PATH:$M2_HOME/bin' }
+            - { line: "M2_HOME=/opt/apache-maven-3.9.12" }
+            - { line: "PATH=$PATH:$M2_HOME/bin" }
